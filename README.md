@@ -29,5 +29,14 @@ A modern customer support chat application that uses AI to handle order-related 
 
 1. Install dependencies:
 ```bash
-cd frontend
-npm install
+- for frontend:
+    cd frontend
+    npm install
+    npm run dev
+
+- for backend:
+    cd backend
+    npm install
+    node server.js
+```
+
