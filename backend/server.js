@@ -11,7 +11,7 @@ app.use(express.json());
 
 const PORT = 5000;
 const HF_API_KEY = process.env.HF_API_KEY;
-const MODEL_NAME = "microsoft/DialoGPT-large";  // Better for conversational AI
+const MODEL_NAME = "google/flan-t5-large";  // Better for conversational AI
 
 app.post("/api/ask", async (req, res) => {
   const { question } = req.body;
@@ -26,7 +26,6 @@ app.post("/api/ask", async (req, res) => {
   try {
     // Extract query details using NLP
     const queryDetails = await extractQueryDetails(question);
-    console.log('queryDetails:-------------------------- ', queryDetails);
     
     
     if (!queryDetails) {
@@ -97,23 +96,24 @@ app.post("/api/ask", async (req, res) => {
 
     // Build context from matched orders
     const orderDetails = matchedOrders.map(order => formatOrderInfo(order)).join("\n\n");
-    
-    const finalPrompt = `
-      You are a helpful customer service AI. Answer this question about order(s):
-      "${question}"
-      
-      Based on these order details:
-      ${orderDetails}
-      
-      The customer's query intent is: ${queryDetails.intent}
-      
-      Provide a clear, helpful response focusing on the specific information requested.
-      If the query mentions specific aspects (tracking, returns, etc.), prioritize that information.
-    `;
+
+    const finalPrompt = `Context: ${orderDetails}
+Question: ${question}
+Intent: ${queryDetails.intent}
+
+Provide a direct answer about the order details, focusing only on the information requested.`;
 
     const response = await axios.post(
       `https://api-inference.huggingface.co/models/${MODEL_NAME}`,
-      { inputs: finalPrompt },
+      {
+        inputs: finalPrompt,
+        parameters: {
+          max_length: 200,
+          temperature: 0.7,
+          top_p: 0.9,
+          do_sample: true,
+        }
+      },
       {
         headers: {
           Authorization: `Bearer ${HF_API_KEY}`,
